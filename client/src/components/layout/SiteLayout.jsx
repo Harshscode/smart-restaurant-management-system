@@ -3,10 +3,10 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ArrowUpRight, Clock3, Leaf, MapPin, Menu, X } from 'lucide-react';
 
 const sections = [
-  { label: 'Home', href: '#top' },
-  { label: 'Our kitchen', href: '#discover' },
-  { label: 'Our story', href: '#story' },
-  { label: 'Visit', href: '#visit' },
+  { label: 'Home', href: '/' },
+  { label: 'About', href: '/about' },
+  { label: 'Our kitchen', href: '/#discover' },
+  { label: 'Visit', href: '/#visit' },
 ];
 
 export default function SiteLayout() {
