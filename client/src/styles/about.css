@@ -1,0 +1,180 @@
+
+.about-hero {
+  background: #193c30;
+  color: #fff;
+  padding: 110px 0;
+  text-align: center;
+}
+
+.about-hero-inner {
+  max-width: 850px;
+}
+
+.about-hero h1 {
+  margin: 22px 0;
+  font-size: clamp(46px, 6vw, 78px);
+  line-height: 1.15;
+}
+
+.about-hero p {
+  max-width: 650px;
+  margin: 0 auto;
+  color: #d5dfd6;
+  font-size: 16px;
+  line-height: 1.9;
+}
+
+.about-story-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 85px;
+}
+
+.about-art {
+  min-height: 420px;
+  background: #e9dfce;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.about-art::after {
+  content: '';
+  position: absolute;
+  inset: 20px;
+  border: 1px solid #d4bd94;
+  pointer-events: none;
+}
+
+.about-art-circle {
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: #204737;
+  color: #e2c486;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.about-art-circle span {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.about-story-copy h2,
+.about-cta h2 {
+  font-size: clamp(36px, 4vw, 55px);
+  margin: 18px 0;
+  line-height: 1.25;
+}
+
+.about-story-copy h2 em {
+  color: #a57f43;
+}
+
+.about-story-copy p {
+  color: #68766d;
+  line-height: 1.9;
+  font-size: 15px;
+}
+
+.about-text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #a57f43;
+  font-weight: 700;
+}
+
+.about-values {
+  background: #f2eee5;
+}
+
+.about-values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px;
+}
+
+.about-value-card {
+  background: #fff;
+  padding: 38px 30px;
+  border: 1px solid #e5e0d6;
+}
+
+.about-value-icon {
+  width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  background: #edf1eb;
+  color: #204737;
+  border-radius: 50%;
+  margin-bottom: 25px;
+}
+
+.about-value-card h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.about-value-card p {
+  color: #68766d;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.about-cta {
+  padding: 90px 0;
+  background: #204337;
+  color: #fff;
+}
+
+.about-cta-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 40px;
+}
+
+.about-cta p {
+  color: #d0dfd1;
+  line-height: 1.8;
+}
+
+@media (max-width: 760px) {
+  .about-hero {
+    padding: 75px 0;
+  }
+
+  .about-story-grid,
+  .about-values-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-story-grid {
+    gap: 40px;
+  }
+
+  .about-art {
+    min-height: 330px;
+  }
+
+  .about-art-circle {
+    width: 210px;
+    height: 210px;
+  }
+
+  .about-cta-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
