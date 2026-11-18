@@ -7,6 +7,7 @@ import { Order } from '../models/Order.js';
 import { Reservation } from '../models/Reservation.js';
 import { Event } from '../models/Event.js';
 import { TableSchedule } from '../models/TableSchedule.js';
+import { RestaurantTable } from '../models/RestaurantTable.js';
 
 export async function connectDatabase(uri) {
   if (!uri) {
@@ -20,16 +21,15 @@ export async function connectDatabase(uri) {
     autoIndex: true,
   });
 
-  await Promise.all(
-    [
-      User,
-      MenuItem,
-      Order,
-      Reservation,
-      Event,
-      TableSchedule,
-    ].map(model => model.init())
-  );
+  await Promise.all([
+    User,
+    MenuItem,
+    Order,
+    Reservation,
+    Event,
+    TableSchedule,
+    RestaurantTable,
+  ].map(model => model.init()));
 
   console.log(
     `MongoDB connected: ${mongoose.connection.name}`
