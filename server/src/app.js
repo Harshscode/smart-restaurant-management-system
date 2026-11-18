@@ -4,6 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
+import { createUserRouter } from './routes/userRoutes.js';
 import { createAuthRouter } from './routes/authRoutes.js';
 import { createMenuRouter } from './routes/menuRoutes.js';
 import { protectWrites } from './middleware/protectWrites.js';
@@ -56,6 +57,9 @@ export function createApp(config) {
 
   // MongoDB-backed restaurant menu API
   app.use('/api/menu', createMenuRouter(config));
+
+  // Protected customer and administrator user APIs
+  app.use('/api/users', createUserRouter(config));
 
   // Unknown API endpoints
   app.use('/api', (_req, res) => {
