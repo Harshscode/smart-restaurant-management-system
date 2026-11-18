@@ -8,6 +8,8 @@ import { createUserRouter } from './routes/userRoutes.js';
 import { createAuthRouter } from './routes/authRoutes.js';
 import { createMenuRouter } from './routes/menuRoutes.js';
 import { createOrderRouter } from './routes/orderRoutes.js';
+import { createReservationRouter } from './routes/reservationRoutes.js';
+import { createEventRouter } from './routes/eventRoutes.js';
 import { protectWrites } from './middleware/protectWrites.js';
 
 export function createApp(config) {
@@ -61,6 +63,17 @@ export function createApp(config) {
 
   // MongoDB-backed customer and admin order APIs
   app.use('/api/orders', createOrderRouter(config));
+
+  // Reservation and special-event APIs
+  app.use(
+  '/api/reservations',
+  createReservationRouter(config)
+  );
+
+  app.use(
+  '/api/events',
+  createEventRouter(config)
+  );
 
   // Protected customer and administrator user APIs
   app.use('/api/users', createUserRouter(config));
