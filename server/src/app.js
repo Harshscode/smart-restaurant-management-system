@@ -11,6 +11,7 @@ import { createOrderRouter } from './routes/orderRoutes.js';
 import { createReservationRouter } from './routes/reservationRoutes.js';
 import { createEventRouter } from './routes/eventRoutes.js';
 import { protectWrites } from './middleware/protectWrites.js';
+import { createDashboardRouter } from './routes/dashboardRoutes.js';
 
 export function createApp(config) {
   if (
@@ -44,6 +45,12 @@ export function createApp(config) {
 
   app.use(express.json({ limit: '32kb' }));
   app.use(cookieParser());
+
+  // Administrator dashboard and reporting API
+  app.use(
+   '/api/admin',
+    createDashboardRouter(config)
+  );
 
   // Protect state-changing API requests.
   app.use('/api', protectWrites(config));
