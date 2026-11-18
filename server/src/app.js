@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
 import { createAuthRouter } from './routes/authRoutes.js';
+import { createMenuRouter } from './routes/menuRoutes.js';
 import { protectWrites } from './middleware/protectWrites.js';
 
 export function createApp(config) {
@@ -52,6 +53,9 @@ export function createApp(config) {
 
   // Authentication endpoints
   app.use('/api/auth', createAuthRouter(config));
+
+  // MongoDB-backed restaurant menu API
+  app.use('/api/menu', createMenuRouter(config));
 
   // Unknown API endpoints
   app.use('/api', (_req, res) => {
