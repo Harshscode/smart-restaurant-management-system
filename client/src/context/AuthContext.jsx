@@ -1,65 +1,36 @@
-
 import {
   createContext,
   useContext,
   useEffect,
   useMemo,
   useState,
-} from "react";
-
-import { readStored, writeStored } from "../lib/storage.js";
+} from 'react';
+import { apiRequest } from '../services/apiClient.js';
 
 const AuthContext = createContext(null);
 
-// Temporary customer preview storage.
-// This will be replaced during customer API integration.
-const CUSTOMER_SESSION = "ct_srms_customer_preview_session";
-
-const WRITE_HEADERS = {
-  "Content-Type": "application/json",
-  "X-SRMS-Request": "1",
-};
-
 export function AuthProvider({ children }) {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+  // The HttpOnly cookie is the authentication source of truth.
+  // A backend session can represent either an admin or a customer.
+  const [sessionUser, setSessionUser] = useState(null);
+  const [checkingSession, setCheckingSession] =
+    useState(true);
 
-  // Temporary frontend customer preview.
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(
-        sessionStorage.getItem(CUSTOMER_SESSION) || "null"
-      );
-    } catch {
-      return null;
-    }
-  });
-
-  // Restore the real administrator session on page refresh.
   useEffect(() => {
     let active = true;
 
     async function restoreSession() {
       try {
-        const response = await fetch("/api/auth/me", {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          if (active) setIsAdmin(false);
-          return;
-        }
-
-        const data = await response.json();
+        const result = await apiRequest(
+          '/api/auth/me'
+        );
 
         if (active) {
-          setIsAdmin(data?.user?.role === "admin");
+          setSessionUser(result.user ?? null);
         }
-      } catch (error) {
-        console.error("Session verification failed:", error);
-
+      } catch {
         if (active) {
-          setIsAdmin(false);
+          setSessionUser(null);
         }
       } finally {
         if (active) {
@@ -77,162 +48,191 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      isAdmin,
-      user,
+      sessionUser,
+      isAdmin:
+        sessionUser?.role === 'admin',
+
+      user:
+        sessionUser?.role === 'customer'
+          ? sessionUser
+          : null,
+
       checkingSession,
 
-      // Real MongoDB administrator authentication.
+      // AdminLogin.jsx uses this method.
       signIn: async (email, password) => {
-        const response = await fetch("/api/auth/login", {
-          method: "POST",
-          credentials: "include",
-          headers: WRITE_HEADERS,
-          body: JSON.stringify({
-            email: email.trim().toLowerCase(),
-            password,
-          }),
-        });
-
-        const data = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          throw new Error(
-            data.message || "Unable to log in."
-          );
-        }
-
-        // The admin portal must reject customer accounts.
-        if (data.user?.role !== "admin") {
-          await fetch("/api/auth/logout", {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "X-SRMS-Request": "1",
+        const result = await apiRequest(
+          '/api/auth/login',
+          {
+            method: 'POST',
+            body: {
+              email: email
+                .trim()
+                .toLowerCase(),
+              password,
             },
-          });
+          }
+        );
+
+        if (result.user?.role !== 'admin') {
+          // Login may have set a customer cookie.
+          // Remove it before rejecting access to the admin portal.
+          await apiRequest(
+            '/api/auth/logout',
+            {
+              method: 'POST',
+            }
+          );
+
+          setSessionUser(null);
 
           throw new Error(
-            "Administrator access is required."
+            'Administrator access is required. Use the customer login for customer accounts.'
           );
         }
 
-        setIsAdmin(true);
+        setSessionUser(result.user);
         return true;
       },
 
-      // Temporary customer preview.
-      startCustomerPreview: (details) => {
-        const email = String(details.email || "")
-          .trim()
-          .toLowerCase();
-
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          throw new Error("Enter a valid email address.");
-        }
-
-        const saved = readStored("demoAccounts", []);
-        const accounts = Array.isArray(saved) ? saved : [];
-
-        const known = accounts.find(
-          (account) => account.email === email
+      loginCustomer: async (
+        email,
+        password
+      ) => {
+        const result = await apiRequest(
+          '/api/auth/login',
+          {
+            method: 'POST',
+            body: {
+              email: email
+                .trim()
+                .toLowerCase(),
+              password,
+            },
+          }
         );
 
-        const name = String(
-          details.name || known?.name || ""
-        ).trim();
+        if (
+          result.user?.role !== 'customer'
+        ) {
+          await apiRequest(
+            '/api/auth/logout',
+            {
+              method: 'POST',
+            }
+          );
 
-        if (name.length < 2) {
+          setSessionUser(null);
+
           throw new Error(
-            "Name must contain at least two characters."
+            'This is a staff account. Please use the staff portal.'
           );
         }
 
-        const profile = {
-          id: known?.id || `demo-${Date.now()}`,
-          name,
-          email,
-          phone: String(
-            details.phone || known?.phone || ""
-          ).trim(),
-        };
-
-        const updatedAccounts = known
-          ? accounts.map((account) =>
-              account.email === email ? profile : account
-            )
-          : [...accounts, profile];
-
-        writeStored("demoAccounts", updatedAccounts);
-
-        sessionStorage.setItem(
-          CUSTOMER_SESSION,
-          JSON.stringify(profile)
-        );
-
-        setUser(profile);
-        return profile;
+        setSessionUser(result.user);
+        return result.user;
       },
 
-      // Temporary customer preview update.
-      saveProfile: (details) => {
-        if (!user) {
-          throw new Error("No customer profile is open.");
-        }
+      registerCustomer: async ({
+        name,
+        email,
+        password,
+        phone = '',
+      }) => {
+        const result = await apiRequest(
+          '/api/auth/register',
+          {
+            method: 'POST',
+            body: {
+              name: name.trim(),
+              email: email
+                .trim()
+                .toLowerCase(),
+              password,
+              phone: phone.trim(),
+            },
+          }
+        );
 
-        const profile = {
-          ...user,
-          name: String(details.name || "").trim(),
-          phone: String(details.phone || "").trim(),
-        };
-
-        if (profile.name.length < 2) {
+        if (
+          result.user?.role !== 'customer'
+        ) {
           throw new Error(
-            "Name must contain at least two characters."
+            'Unexpected role returned during registration.'
           );
         }
 
-        const saved = readStored("demoAccounts", []);
-        const accounts = Array.isArray(saved) ? saved : [];
-
-        writeStored(
-          "demoAccounts",
-          accounts.map((account) =>
-            account.email === user.email
-              ? profile
-              : account
-          )
-        );
-
-        sessionStorage.setItem(
-          CUSTOMER_SESSION,
-          JSON.stringify(profile)
-        );
-
-        setUser(profile);
-        return profile;
+        setSessionUser(result.user);
+        return result.user;
       },
 
-      // Real server logout.
-      signOut: async () => {
-        const response = await fetch("/api/auth/logout", {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "X-SRMS-Request": "1",
-          },
+      refreshProfile: async () => {
+        const result = await apiRequest(
+          '/api/users/me'
+        );
+
+        setSessionUser(result.user);
+        return result.user;
+      },
+
+      saveProfile: async ({
+        name,
+        phone,
+      }) => {
+        if (
+          sessionUser?.role !== 'customer'
+        ) {
+          throw new Error(
+            'Customer login is required.'
+          );
+        }
+
+        const result = await apiRequest(
+          '/api/users/me',
+          {
+            method: 'PATCH',
+            body: {
+              name: name.trim(),
+              phone: phone.trim(),
+            },
+          }
+        );
+
+        setSessionUser(result.user);
+        return result.user;
+      },
+
+      deactivateAccount: async () => {
+        if (
+          sessionUser?.role !== 'customer'
+        ) {
+          throw new Error(
+            'Customer login is required.'
+          );
+        }
+
+        await apiRequest('/api/users/me', {
+          method: 'DELETE',
         });
 
-        if (!response.ok) {
-          throw new Error("Unable to sign out.");
-        }
+        setSessionUser(null);
+      },
 
-        setIsAdmin(false);
-        setUser(null);
+      signOut: async () => {
+        await apiRequest(
+          '/api/auth/logout',
+          {
+            method: 'POST',
+          }
+        );
 
-        sessionStorage.removeItem(CUSTOMER_SESSION);
+        setSessionUser(null);
       },
     }),
-    [isAdmin, user, checkingSession]
+    [
+      sessionUser,
+      checkingSession,
+    ]
   );
 
   return (
@@ -247,7 +247,7 @@ export function useAuth() {
 
   if (!context) {
     throw new Error(
-      "useAuth must be used inside AuthProvider."
+      'useAuth must be used inside AuthProvider.'
     );
   }
 
