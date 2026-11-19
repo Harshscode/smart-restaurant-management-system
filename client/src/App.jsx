@@ -32,11 +32,24 @@ class ErrorBoundary extends Component {
     super(props);
     this.state = { failed: false };
   }
-  static getDerivedStateFromError() { return { failed: true }; }
-  componentDidCatch(error, info) { console.error('Application error:', error, info); }
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('Application error:', error, info);
+  }
+
   render() {
     return this.state.failed
-      ? <div className="container section" role="alert"><h1>Something went wrong.</h1><p>Please refresh the page and try again.</p><a className="btn btn-primary" href="/">Back to home</a></div>
+      ? (
+        <div className="container section" role="alert">
+          <h1>Something went wrong.</h1>
+          <p>Please refresh the page and try again.</p>
+          <a className="btn btn-primary" href="/">Back to home</a>
+        </div>
+      )
       : this.props.children;
   }
 }
@@ -45,7 +58,11 @@ function RequireAdmin() {
   const { isAdmin, checkingSession } = useAuth();
 
   if (checkingSession) {
-    return <div>Checking administrator session...</div>;
+    return (
+      <div className="container section" role="status">
+        Checking administrator session...
+      </div>
+    );
   }
 
   return isAdmin
@@ -54,8 +71,19 @@ function RequireAdmin() {
 }
 
 function RequireCustomer() {
-  const { user } = useAuth();
-  return user ? <Outlet /> : <Navigate to="/account/login" replace />;
+  const { user, checkingSession } = useAuth();
+
+  if (checkingSession) {
+    return (
+      <div className="container section" role="status">
+        Checking customer session...
+      </div>
+    );
+  }
+
+  return user
+    ? <Outlet />
+    : <Navigate to="/account/login" replace />;
 }
 
 export default function App() {
@@ -77,12 +105,16 @@ export default function App() {
                   <Route path="events" element={<Events />} />
                   <Route path="concierge" element={<Concierge />} />
                   <Route path="account/login" element={<AccountLogin />} />
+
                   <Route element={<RequireCustomer />}>
                     <Route path="account" element={<Account />} />
                   </Route>
+
                   <Route path="*" element={<NotFound />} />
                 </Route>
+
                 <Route path="admin/login" element={<AdminLogin />} />
+
                 <Route element={<RequireAdmin />}>
                   <Route path="admin" element={<AdminLayout />}>
                     <Route index element={<Dashboard />} />
