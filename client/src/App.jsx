@@ -42,8 +42,15 @@ class ErrorBoundary extends Component {
 }
 
 function RequireAdmin() {
-  const { isAdmin } = useAuth();
-  return isAdmin ? <Outlet /> : <Navigate to="/admin/login" replace />;
+  const { isAdmin, checkingSession } = useAuth();
+
+  if (checkingSession) {
+    return <div>Checking administrator session...</div>;
+  }
+
+  return isAdmin
+    ? <Outlet />
+    : <Navigate to="/admin/login" replace />;
 }
 
 function RequireCustomer() {
